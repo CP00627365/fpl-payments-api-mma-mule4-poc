@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:compatibility="http://www.mulesoft.org/schema/mule/compatibility" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/compatibility http://www.mulesoft.org/schema/mule/compatibility/current/mule-compatibility.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+    <!--Migration WARN: consoleEnabled property do not exist in Mule 4.-->
+    <!--<apikit:config xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" name="moc-fpl-gp-batch-file-process-api-config" raml="moc-fpl-gp-batch-file-process-api.raml" consoleEnabled="false" doc:name="Router" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />-->
+    <http:listener-config name="moc-fpl-gp-batch-file-process-api-httpListenerConfig" doc:name="HTTP Listener Configuration">
+        <http:listener-connection host="0.0.0.0" port="8085" />
+    </http:listener-config>
+
+    <apikit:config name="moc-fpl-gp-batch-file-process-api-config" raml="moc-fpl-gp-batch-file-process-api.raml" doc:name="Router" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+
+    <configuration doc:name="Configuration" doc:id="e1fc106d-91b8-40db-805b-f58c0b5d8fe2" defaultErrorHandler-ref="moc-fpl-gp-batch-file-process-api-apiKitGlobalExceptionMapping" />
+	<flow name="moc-fpl-gp-batch-file-process-api-main">
+        <http:listener config-ref="moc-fpl-gp-batch-file-process-api-httpListenerConfig" path="/api/*" doc:name="HTTP">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <!--Migration WARN: Avoid using an outbound property to determine the status code.-->
+                <!--    For more information refer to:-->
+                <!--        * https://github.com/mulesoft/mule-migration-assistant/blob/master/docs/user-docs/migration-tool-post-mig.adoc#outbound_properties-->
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <!--Migration WARN: Avoid using an outbound property to determine the status code.-->
+                <!--    For more information refer to:-->
+                <!--        * https://github.com/mulesoft/mule-migration-assistant/blob/master/docs/user-docs/migration-tool-post-mig.adoc#outbound_properties-->
+            </http:error-response>
+        </http:listener>
+
+        <apikit:router config-ref="moc-fpl-gp-batch-file-process-api-config" doc:name="APIkit Router" />
+
+        <error-handler ref="moc-fpl-gp-batch-file-process-api-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy" />
+
+    </flow>
+
+    <flow name="moc-fpl-gp-batch-file-process-api-console">
+        <http:listener config-ref="moc-fpl-gp-batch-file-process-api-httpListenerConfig" path="/console/*" doc:name="HTTP">
+            <http:response statusCode="#[migration::HttpListener::httpListenerResponseSuccessStatusCode(vars)]">
+                <!--Migration WARN: Avoid using an outbound property to determine the status code.-->
+                <!--    For more information refer to:-->
+                <!--        * https://github.com/mulesoft/mule-migration-assistant/blob/master/docs/user-docs/migration-tool-post-mig.adoc#outbound_properties-->
+                <http:headers>#[migration::HttpListener::httpListenerResponseHeaders(vars)]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.statusCode default migration::HttpListener::httpListenerResponseErrorStatusCode(vars)]">
+                <!--Migration WARN: Avoid using an outbound property to determine the status code.-->
+                <!--    For more information refer to:-->
+                <!--        * https://github.com/mulesoft/mule-migration-assistant/blob/master/docs/user-docs/migration-tool-post-mig.adoc#outbound_properties-->
+                <http:headers>#[migration::HttpListener::httpListenerResponseHeaders(vars)]</http:headers>
+            </http:error-response>
+        </http:listener>
+
+        <apikit:console config-ref="moc-fpl-gp-batch-file-process-api-config" doc:name="APIkit Console" />
+
+    </flow>
+
+    <flow name="post:\fplBatchFileProcess:moc-fpl-gp-batch-file-process-api-config">
+        <set-payload value='#[{
+"COMPANY" : "FLORIDA POWER LIGHT",
+"CUSTOMER ID" : payload.CUSTOMERID,
+"AMOUNT" : payload.AMOUNT,
+"STATUS" : " FLORIDA POWER LIGHT RECORDS PEOCESSED"
+}]' doc:name="Set Payload" />
+
+    </flow>
+
+    <flow name="post:\gpBatchFileProcess:moc-fpl-gp-batch-file-process-api-config">
+        <set-payload value='#[{
+"COMPANY" : "GULF POWER",
+"CUSTOMER ID" : payload.CUSTOMERID,
+"AMOUNT" : payload.AMOUNT,
+"STATUS" : " GULF POWER RECORDS PEOCESSED"
+}]' doc:name="Set Payload" />
+
+    </flow>
+
+    <error-handler name="moc-fpl-gp-batch-file-process-api-apiKitGlobalExceptionMapping">
+        <on-error-propagate type="APIKIT:NOT_FOUND">
+            <set-variable variableName="httpStatus" value="404" />
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload" />
+        </on-error-propagate>
+        <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+            <set-variable variableName="httpStatus" value="405" />
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload" />
+        </on-error-propagate>
+        <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+            <set-variable variableName="httpStatus" value="415" />
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload" />
+        </on-error-propagate>
+        <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+            <set-variable variableName="httpStatus" value="406" />
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload" />
+        </on-error-propagate>
+        <on-error-propagate type="APIKIT:BAD_REQUEST">
+            <set-variable variableName="httpStatus" value="400" />
+            <set-payload value="{ &quot;message&quot;: &quot;Bad request&quot; }" doc:name="Set Payload" />
+        </on-error-propagate>
+    </error-handler>
+
+</mule>

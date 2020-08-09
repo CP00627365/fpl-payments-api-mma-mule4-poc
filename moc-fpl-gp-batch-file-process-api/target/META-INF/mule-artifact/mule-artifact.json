@@ -1,0 +1,27 @@
+{
+  "configs": [
+    "moc-fpl-gp-batch-file-process-api.xml"
+  ],
+  "secureProperties": [],
+  "redeploymentEnabled": true,
+  "name": "org.mule.migrated:moc-fpl-gp-batch-file-process-api:1.0.0-M4-SNAPSHOT",
+  "minMuleVersion": "4.2.0",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": [
+        "api/moc-fpl-gp-batch-file-process-api.raml",
+        "log4j2.xml",
+        "migration/attributes2inboundProperties.dwl",
+        "moc-fpl-gp-batch-file-process-api.xml",
+        "mule-app.properties"
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}

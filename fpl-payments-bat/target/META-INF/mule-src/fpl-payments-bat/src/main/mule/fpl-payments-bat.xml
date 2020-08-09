@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:compatibility="http://www.mulesoft.org/schema/mule/compatibility"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd http://www.mulesoft.org/schema/mule/compatibility http://www.mulesoft.org/schema/mule/compatibility/current/mule-compatibility.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+
+	<http:request-config name="HTTP_Request_Configuration"
+		doc:name="HTTP Request Configuration" basePath="/api">
+		<http:request-connection host="localhost"
+			port="8085" />
+	</http:request-config>
+
+	<email:smtp-config name="SmtpConfig">
+		<email:smtp-connection host="smtp.gmail.com"
+			port="587" user="muleoperationsteam@gmail.com" password="muleoperationsteam123">
+			<email:properties>
+				<email:property value="true" key="mail.smtp.starttls.enable" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+
+	<flow name="fpl-payments-batBatch">
+		<file:listener directory="C:\Users\rajenvem\Desktop\Praveen\SampleFiles1"
+			doc:name="On New or Updated File" applyPostActionWhenFailed="false"
+			recursive="false" autoDelete="true">
+			<!--Migration INFO: 'responseTimeout' was not being used by the file transport. -->
+			<scheduling-strategy>
+				<fixed-frequency />
+			</scheduling-strategy>
+		</file:listener>
+
+		<ee:transform doc:name="Transform Message"
+			doc:id="0df41c94-0d5c-438f-86cf-12792bd27345">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="fpl-payments-batBatch">
+			<batch:process-records>
+				<batch:step name="Batch_Step">
+					<ee:transform doc:name="Transform Message"
+						doc:id="c49bc926-583b-4fce-9497-21caf8218436">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json  
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<http:request config-ref="HTTP_Request_Configuration"
+						path="/fplBatchFileProcess" method="POST" doc:name="HTTP">
+					</http:request>
+					<validation:is-number value="#[payload.AMOUNT]"
+						numberType="FLOAT" doc:name="Validation" />
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete>
+				<email:send doc:name="Send"
+					doc:id="074a4664-807e-43d5-9b94-4f5668631a6f" config-ref="SmtpConfig"
+					fromAddress="muleoperationsteam@gmail.com" subject="FPL Payments EOD Batch Status">
+					<email:to-addresses>
+						<email:to-address value="vemulamouniraj@gmail.com" />
+						<email:to-address value="vemulamouniraj@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html">
+						<email:content><![CDATA[#[output text/plain
+
+---
+
+"<html> <body>" ++
+"<p> Hi Team, </p>" ++
+"<p> All payment records for Gulf Power have been processed. </p>" ++
+"<p> Below is the summary of the batch process. </p>" ++
+"<p> Total Number of Records: " ++ (payload.totalRecords as Number) ++ "</p>" ++
+"<p>Successful Records: " ++ (payload.successfulRecords as Number) ++ "</p>" ++
+"<p>Failed Records: " ++ (payload.failedRecords as Number) ++ "</p>" ++
+"<p><br> </p>"++
+"<p>Thanks,</p>" ++
+"<p>MuleSoft Operations Team </p>"  ++
+"</body></html>"]]]></email:content>
+					</email:body>
+				</email:send>
+			</batch:on-complete>
+		</batch:job>
+
+	</flow>
+
+	<flow name="fpl-payments-batBatch1">
+
+		<file:listener doc:name="On New or Updated File"
+			doc:id="2ee12cfa-b000-46a5-89a3-835f2428e93f" directory="C:\Users\rajenvem\Desktop\Praveen\SampleFiles"
+			autoDelete="true">
+			<scheduling-strategy>
+				<fixed-frequency />
+			</scheduling-strategy>
+		</file:listener>
+
+		<ee:transform doc:name="Transform Message"
+			doc:id="5e00af00-d72f-43c7-b704-1d276aa49e40">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="fpl-payments-batBatch1">
+			<batch:process-records>
+				<batch:step name="Batch_Step1">
+					<ee:transform doc:name="Transform Message"
+						doc:id="7dec7a8c-4731-4991-a128-e7adbbea6439">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json  
+---
+payload  ]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<http:request config-ref="HTTP_Request_Configuration"
+						path="/gpBatchFileProcess" method="POST" doc:name="HTTP">
+					</http:request>
+					<validation:is-number value="#[payload.AMOUNT]"
+						numberType="FLOAT" doc:name="Validation" />
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete>
+				<email:send doc:name="Send"
+					doc:id="1a65f726-b08f-45d0-a409-99b3935e0bb3" config-ref="SmtpConfig"
+					fromAddress="muleoperationsteam@gmail.com" subject="FPL Payments EOD Batch Status">
+					<email:to-addresses>
+						<email:to-address value="vemulamouniraj@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html">
+						<email:content><![CDATA[#[output text/plain
+
+---
+
+"<html> <body>" ++
+"<p> Hi Team, </p>" ++
+"<p> All payment records for Gulf Power have been processed. </p>" ++
+"<p> Below is the summary of the batch process. </p>" ++
+"<p> Total Number of Records: " ++ (payload.totalRecords as Number) ++ "</p>" ++
+"<p>Successful Records: " ++ (payload.successfulRecords as Number) ++ "</p>" ++
+"<p>Failed Records: " ++ (payload.failedRecords as Number) ++ "</p>" ++
+"<p><br> </p>"++
+"<p>Thanks,</p>" ++
+"<p>MuleSoft Operations Team </p>"  ++
+"</body></html>"]]]></email:content>
+					</email:body>
+				</email:send>
+			</batch:on-complete>
+		</batch:job>
+
+	</flow>
+
+</mule>

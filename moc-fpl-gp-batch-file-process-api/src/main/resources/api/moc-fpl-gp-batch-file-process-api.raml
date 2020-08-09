@@ -1,0 +1,49 @@
+#%RAML 1.0
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/b2aab870-5773-4a9f-8c68-8086326f7077/ # 
+title: fpl-gp-batch-file-process-api
+
+
+/gpBatchFileProcess:
+  post:
+    description: GP BATCH FILE PROCESS RESOURCE
+    body:
+      application/json:
+        example:
+          {
+            "AMOUNT":0.0,
+            CUSTOMER_ID:"123654"
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+  "COMPANY": "GULF POWER",
+  "CUSTOMER ID" :payload.CUSTOMERID,
+  "AMOUNT":payload.AMOUNT,
+     "STATUS" : " GULF POWER RECORDS PEOCESSED"
+}
+              
+/fplBatchFileProcess:
+  post:
+    description: FPL BATCH FILE PROCESS RESOURCE
+    body:
+      application/json:
+        example:
+          {
+            "AMOUNT":0.0,
+            CUSTOMER_ID:"123654"
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {
+   "COMPANY": "FLORIDA POWER LIGHT",
+  "CUSTOMER ID" :payload.CUSTOMERID,
+  "AMOUNT":payload.AMOUNT,
+     "STATUS" : " FLORIDA POWER LIGHT RECORDS PEOCESSED"
+
+}
